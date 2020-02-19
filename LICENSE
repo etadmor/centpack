@@ -1,0 +1,22 @@
+
+							CentPack v1.0.5
+							
+A generic numerical solver for hyperbolic conservation laws and related time
+dependent problems
+
+			Copyright (C) 2006 Jorge Balbas and Eitan Tadmor
+
+For further information, please contact the authors at centpack@cscamm.umd.edu,
+or visit CentPack's homepage at:
+
+http://www.cscamm.umd.edu/centpack/
+
+This software is distributed freely for research and instructional purposes 
+only.  You may copy and use this software without charge for these 
+non-commercial purposes, provided that the copyright notice and associated text 
+is reproduced on all copies. For all other uses (including distribution of 
+modified versions), please contact the authors.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.

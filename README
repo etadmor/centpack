@@ -1,0 +1,436 @@
+================================================================================
+================================================================================
+
+						CentPack Documentation v1.0.5
+
+A generic numerical solver for hyperbolic conservation laws and related time 
+dependent problems
+
+				Copyright (C) 2006 Jorge Balbas and Eitan Tadmor
+
+				Date: 04/15/2010
+				
+For further information, please contact the authors at centpack@cscamm.umd.edu, 
+or visit CentPack's homepage at:
+
+http://www.cscamm.umd.edu/centpack/
+
+Changes from v1.0.0 (#): 
+
+(1) MATLAB(R) functionality.  The simulation directories created when CentPack examples are compiled include a MATLAB function, EXAMPLE_NAME_frames.m, that create plots of the different flow variables.  The help portion of the .m file also provides simple instructions on how to concatenate those plots/frames to create an animation
+
+================================================================================
+================================================================================
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+I.	Brief Descripton of Software and Algorithm
+
+II. Download
+
+III. Description of this Package
+
+	A. CentPack C++ libraries
+	B. Model Specific Files
+	C. Problem Specific Files
+	D. Make Files
+#	E. Matlab Examples
+
+IV. Installation Instructions
+
+	A. REMARKS and NOTATION
+	B. How to Install CentPack (source code distribution only)
+	C. How to Compile ALL Examples
+	D. How to Compile a SINGLE Example
+
+V.	Running a CentPack solver
+
+	A. Running one of CentPack's Examples
+	B. CentPack's Output
+#	C. What to do with CentPack's Output: sample MATLAB code and gif animations
+
+VI.	Additional Remarks
+
+	A. Additional Calculations
+	B. Boundary Rows and Columns
+
+VII. Acknowledgements
+
+================================================================================
+I. Brief Description of Software and Algorithm
+================================================================================
+
+The files in this distribution implement six different non-oscillatory central 
+schemes for solving hyperbolic systems of PDEs in one-, 
+
+u_t + f(u)_x = 0,				(1)
+
+and two-space dimensions,
+
+u_t + f(u)_x + g(u)_y =0,		(2)
+
+over the domain [x_init, x_final] x [y_init, y_final], from time t=0 to t=t_final.
+
+The algorithm is based on the evolution of the cell averages of u, and it is 
+implemented in two main steps: #1 reconstruction of point values from cell 
+averages and #2 evolution.
+
+Although only a minimal number of files containing model and problem specific 
+information (i.e., fluxes, initial and boundary conditions, output variables, 
+etc.) are required from the user (examples are provided), and few (if any) 
+modifications of the core files should be needed to solve most problems that 
+accept the above formulations, (1) or (2), the source code can be easily 
+modified and adapted to the taste and requirements of its user.
+
+For more information about central schemes and their implementation consult the 
+additional documentation and references therein or visit CentPack's website
+
+http://www.cscamm.umd.edu/centpack/
+
+For additional information about the variables used by each subroutine, their 
+input, and/or output, please refer to the comments provided within each file 
+and/or the guide CentPack.pdf provided with this distribution.
+
+This package (or previous versions of it) has been compiled, tested and 
+validated in a variety of UNIX / UNIX-like platforms (e.g., Solaris, Linux, IBM 
+SP/2, Mac OS/X) for a variety of test problems corresponding to different models 
+(e.g., Euler equations of gas dynamics, Ideal MHD equations, Shallow-water 
+equations).  The compilation and execution istructions provided below and the 
+included Makefiles are linux-based (g++ compiler), but they should work on other 
+platforms with minor or no modifications.
+
+================================================================================
+II. Download
+================================================================================
+
+Pre-compiled CentPack binaries for different architectures are available at:
+
+http://www.cscamm.umd.edu/centpack/software
+
+A full source code distiribution is also available for downlod for registered 
+users. The source code version will allow users to modify and adapt CentPack 
+best for their specific needs.
+
+Both distributions --precompiled binaries and full source code alike-- are 
+distributed with additional source files that allow users to compile and run 
+sample applications.
+
+================================================================================
+III. Description of this Package
+================================================================================
+
+A. The core of this software consists of seven C++ libraries and their 
+corresponding header files.  The first one, libarray.a, implement the class of 
+multidimensional dynamic data structures (arrays) used to store the solution 
+(and other intermediate and associated) variables.  The other six libraries, 
+libcentpack_Xd_YDZ.a, implement different versions of non-oscillatory central 
+schemes according to the following notation:
+
+X = number of space dimensions: X = 1 or 2,
+YD = formulation: Y = F for Fully-Discrete or Y = S for Semi-Discrete, and
+Z = order of accuracy of the scheme: 2 for 2nd order, and 3 for 3rd.
+
+For example, the library libcentpack_1d_SD2.a implements a one-dimensional, 
+semi-discrete, 2nd order central solver.
+
+REMARKS:
+
+	1. The source code distribution contains the source and make files needed to 
+	create this libraries, not the libraries themselves.  For a detailed 
+	description of each subroutine, please refer to the file describing the 
+	subroutine and/or the manual CP_user_guide.pdf.
+	
+	2. The number of source files compiled under each library depends on the 
+	dimensions, formulation, and order of accuracy of the specific central 
+	scheme implemented by that library.
+	
+	3. The fully-discrete solvers provided in this package are only 2nd order.
+
+B. Model Specific Files (user specified, examples provided)
+
+	1. fluxx.cc -- defines the funciton f(u) in equation (1).
+	
+	2. fluxy.cc -- defines the function g(u) in equation (1).  THIS FUNCTION IS 
+	ONLY REQUIRED FOR 2d SOLVERS!
+	
+	3. spectral_radii.cc -- estimates the maximum speed of propagation of the 
+	components of u in both space dimensions.  FOR 1d SOLVERS THE NAME OF THIS 
+	FUNCTION IS spectral_radius.cc.
+	
+	4. writeout.cc -- defines the output variables as two-dimensional arrays and 
+	a rule to extract them from the multi-dimensional array holding the solution 
+	u of equation (1) or (2), the variables are extracted and written to files 
+	adecuately numbered for further maipulation and analysis of results (e.g., 
+	plotting, error analysis, etc.).
+   
+C. Problem Specific Files (user specified, examples provided)
+
+	1. initial_conditions.cc -- defines a rule to define the solution mesh and 
+	initialize the array holding the solution u.  The function is called by 
+	CentPack's main routine before initiating the evolution.
+	
+	2. boundary_conditions.cc -- boundary conditions are implemented by applying 
+	them to four "ghost" rows and columns (two around each boundary of the 
+	solution domain) in the solution array u.  This function provides with a rule 
+	to fill those rows/colums acording to the problem boundary conditions.  This 
+	allows for the computation of the solution over the computational domain can 
+	be carried out.
+	
+	3. input -- a short file containing the required input required by CentPack 
+	to compute the solution (i.e., number of grid cells along each dimension, cfl 
+	restriction, final time of simulation, and other model/problem specific 
+	information); the value for each input variable is written on a separate line 
+	of the file in the following order (those with addiTsional information in 
+	parenthesis, should be ommited in input files for other solvers):
+	
+	x_init	--	left end-point of domain in x-direction
+	x_final	--	right end-point of domain in x-direction
+	y_init	--	left end-point of domain in y-direction (2d solvers only)
+	y_final	--	right end-point of domain in y-direction (2d solvers only)
+	J		--	number of grid cells in x-direction
+	K		--	number of grid cells in y-direction (2d solvers only)
+	L		--	number of components of u
+	gamma	--	parameter specifying constant ratio of specific heats
+	t_final	--	final time of simulation
+	dt_out	--	time interval at which intermediate output is desired
+	cfl		--	time step restriction
+	alpha	--	parameter for second order reconstruction (still required as 
+				input for 3rd order)
+	B1		--	free parameter (from MHD magnetic field, only required for 1d 
+				solvers)
+   
+D. Make Files
+
+CentPack is distributed with a number of make files that allow the user to 
+compile and install the libraries described above as well as several examples.  
+When executed, and according to the additional arguments given with the make 
+command, the Makefile at the top CentPack directory, calls recursively to other 
+make files in the src/ and src/Xd/samples/ (X = 1,2) subdirectories. These 
+files can be easily modified by users to compile their own central solvers.
+
+# E. MATLAB files
+
+The examples provided with the source code in
+
+src/Xd/samples/EXAMPLE_NAME
+
+(X = 1,2), include an MATLAB file, EXAMPLE_NAME_frames.m (_frames actually 
+replaces the _YDZ extension in EXAMPLE_NAME), that creates plots of the solution 
+variables.
+
+================================================================================
+IV. Installation Instructions
+================================================================================
+
+A. REMARKS and NOTATION:
+
+	1. The following instructions assume that the user specified files have been 
+	created (or the provided examples are used)
+	
+	2. The > symbol below represents the command line prompt of the command 
+	shell.
+	
+	3. The quotation marks below are used to refer to specific file names, they 
+	are not part of the name or needed in the command line syntax.
+	
+	4. The files named "Makefile" contain compilation instructions for the g++ 
+	compiler, adjust as needed for your C++ compiler.
+   
+B. How to Install CentPack
+   
+	If you downloaded pre-compiled binaries, you can skip to IV.C below.  If you 
+	downloaded CentPack's source code:
+	
+	1. Move or copy the downloaded archive CP-1.0.tar.gz to your home directory 
+	(or anywhere else in your hard drive where you have write permission), and cd 
+	there
+	
+	> cp CP-1.0.tar.gz $HOME/CP-1.0.tar.gz
+	> cd $HOME
+	
+	2. Extract the contents of the archive (a directory called CP-1.0) and cd 
+	to CP-1.0
+	
+	> tar -zxf CP-1.0.tar.gz
+	> cd CP-1.0
+	
+	3. To compile and install CentPack type
+	
+	> make libs
+	
+	This will create seven libraries in the subdirectory CP-1.0/lib/, one with 
+	the definition of the array classes (data structures) used by CentPack, and 
+	six with the implementation of each one of the central solvers implemented by 
+	this version of CentPack. You can verify this by typing
+	
+	> ls lib/
+	
+	if everything went well, you should see a file called liabarray.a, and six 
+	other that follow the notation libcentpack_Xd_YDZ, with X, Y, and Z, taking 
+	on the values specified above.
+   
+C. How to Compile ALL examples
+   
+	Make sure you are in CP-1.0, and type
+	
+	> make samples
+	
+	This will create create a new directory, CP-1.0/samples/, containing six 
+	subdirectories consisting of the name of the example, followed by a key of 
+	the form _Xd_YDZ denoting the central solver used to compile the example as 
+	specified above (e.g., burguers_1d_SD3, euler_2d_FD2, etc.) These directories 
+	contain everything needed to run the example and reproduce the animations 
+	shown in CentPack's sample pages.
+   
+D. How to compile a single example
+
+	Alternatively, individual examples can be compiled by typing
+	
+	> make NAME_OF_EXAMPLE
+	
+	with NAME_OF_EXAMPLE substituted by one of the following:
+   
+	burgers_1d_SD3, euler_1d_SD2, MHD_1d_FD2, euler_2d_FD2, MHD_2d_SD2, and 
+	scalar_2d_SD3.  For example, the command
+	
+	> make burgers_1d_SD3
+	
+	will create the directory CP-1.0/samples/burgers_1d_SD3/ with all the files 
+	needed to run the simulation and directories to write the output.
+   
+================================================================================
+V. Running a CentPack solver
+================================================================================
+
+A. Running one of CentPack's examples (assuming burgers_1d_SD3 as the example to 
+be run)
+
+	1. After compiling the example(s), go into the sample directory you wish to 
+	run.  Make sure you are in CP-1.0, and type
+	
+	> cd samples/burgers_1d_SD3/
+	
+	Alternatively, if you compiled other examples, you can browse 
+	CP-1.0/samples/ and decide which example you want to run, then move to its 
+	simulation directory, for example
+	
+	> ls samples/
+	> cd samples/euler_1d_SD2/
+	
+	2. Once in the directory of the example you wish to run, type its name, in our example,
+	
+	> ./burgers_1d_SD3
+	
+	Note that each simulation directory contains only one executable whose name 
+	is quite obvious, the only other contents are the file named 'input', and few 
+	directories ending in _files/ and _frames/, where CentPack's output and MATLAB plots will be written respectively.
+	
+	This command will start running CentPack's solver.  CentPack will read the 
+	data in the input file, set the initial conditions, and evolve them according 
+	to the hyperbolic conservation law, equation (1).  After each time iteration, 
+	CentPack will write a line to the screen that will help monitor the 
+	simulation.  This line contains the following information:
+	
+	run -- present simulation time
+	
+	dt -- time step used in the last time iteration
+	
+	dt_cpu -- CPU time employed in last time iteration
+	
+	t -- total CPU time thus far
+	
+	odd/even -- (fully-discrete schemes only) indicates whether the last time 
+			   step was an even or odd one
+	
+	Alternatively, you can run CentPack's example by typing
+	
+	> ./burgers_1d_SD3 > monitor &
+	
+	This will re-direct the monitoring information to the file monitor.
+	
+	Depending in your user privilegies, the performance of the solver can be 
+	improved by typing
+	
+	> nice ./burgers > monitor &
+	
+	When the simulation is completed, in addition to the output files, a file 
+	named run_info.txt containing some simulation information, will be generated
+   
+B. CentPack's Output (assuming burgers_1d_SD3 is the example run)
+
+	1. The parameter dt_out, provided in the input file, will determine at what 
+	approximate time interval the output will be produced.  CentPack's output is 
+	produced by the function writeout.cc (examples of this function are 
+	provided), which specifies the names and of the variables to be output and a 
+	rule to calculate them.  Note that this output variables are not necessarily 
+	the ones evolved by CentPack, e.g., when solving Euler's equations of gas 
+	dynamics, one may want to print out the pressure and not the conserved 
+	energy.
+	
+	2. In our example, the output produced by CentPack is written to two 
+	subdirectories of burgers_1d_SD3: u_files/ and t_files/.  The first contains 
+	files with the numerical solution of equation (1), u_0, u_1, u_2, etc. (with 
+	u_0 corresponding to the initial conditions).  The directory t_files/ 
+	contains the files t_0, t_1, t_2, etc., each holding a single value 
+	indicating the simulation time at which the corresponding u_n file was 
+	written.
+   
+C. What to do with CentPack's Output
+
+#	1. Each of the examples provided include a MATLAB file, 
+	EXAMPLE_NAME_frames.m.  This .m file is copied into the simulation directory 
+	of each example and when run from MATLAB, it will create and store the plots of the solution variables of the corresponding example.  Type
+	
+	>> help burgers_1d_frames
+	
+	in MATLAB for detail information on how to use these files and instructions to create a gif animation.
+	
+	2. The output files can be easly loaded into MATLAB or similar software 
+	applications for scientific computing (e.g., Scilab or Octave) and 
+	manipulated with those applications for further analysis of the results.
+	
+	3. The output function does not write the mesh coordinates, x and y.  These 
+	are not time dependent (i.e., there is no need to output them every single 
+	time the output function is called) and can be easily generated by any of 
+	the applications mentioned above.
+	
+================================================================================
+VI. Additional Remarks and Suggestions
+================================================================================
+
+A. Additional Calculations
+   
+	Some hyperbolic models may require the enforcement of additional constraints 
+	or, in some cses, the user may want to compute additional information related 
+	to the problem, but not explicitely calculated in the evolution of the 
+	conservation law.  The code is written so as to allow such modifications as 
+	part of the existing routines or as new routines that can be added without 
+	altering the original structure of the package.  Many such additions have 
+	been successfully created and tested by the authors before, some examples 
+	include the computation of the transverse kinetic energy or the addition of a 
+	external routines to enforce the solenoidal condition of the magnetic field 
+	in MHD test problems.
+
+B. Boundary rows and columns.
+   
+	The solution variables declared in the source files are of size (J+4) x 
+	(K+4), the values of the solution over the discretized domain are calculated 
+	and stored in the interior rows and columns (those with indexes ranging form 
+	2 to J+1 and 2 to K+1 respectively).  The additional rows and columns (rows 
+	numbered 0, 1, J+2, and J+3 and columns numbered 0, 1, K+2, and K+3) are 
+	filled/calculated according to the boundary conditions by the function 
+	boundary_conditions.cc.
+
+================================================================================
+VII. Acknowledgements
+================================================================================
+
+The authors would like to thank Chris Anderson (UCLA Mathematics) for 
+contributing the original source code for the class of multidimensional arrays 
+used in this package, and Nick Kisseberth (former CSCAMM Computer System 
+Administrator) for his help in organazing and simplifying the source code.
+
+================================================================================
+================================================================================
